@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Amber-Shaper Un'sok Training</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #111;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+    .game-area {
+      max-width: 600px;
+      margin: auto;
+    }
+    .buttons {
+      margin-top: 20px;
+    }
+    .buttons .button-container {
+      display: inline-block;
+      position: relative;
+      margin: 0 10px;
+    }
+    .buttons img {
+      width: 64px;
+      height: 64px;
+      cursor: pointer;
+      border: 2px solid #444;
+      border-radius: 8px;
+    }
+    .cooldown {
+      position: absolute;
+      margin-top: -48px;
+      width: 64px;
+      font-size: 18px;
+      color: #ff0;
+    }
+    .keybind {
+      font-size: 18px;
+      margin-top: 4px;
+      color: #ccc;
+    }
+    .bar-container {
+      background: #333;
+      border: 1px solid #999;
+      height: 24px;
+      margin: 20px 0;
+      position: relative;
+    }
+    .bar-fill {
+      background: orange;
+      height: 100%;
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+    .bar-text {
+      position: absolute;
+      width: 100%;
+      text-align: center;
+      top: 0;
+      line-height: 24px;
+    }
+    .status {
+      margin: 20px;
+      font-size: 20px;
+    }
+    .amplifier {
+      font-size: 18px;
+      color: #ffa;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-area">
+    <h1>Amber-Shaper Un'sok Training</h1>
+
+    <div class="buttons">
+      <div class="button-container">
+        <img id="amberStrike" src="https://wow.zamimg.com/images/wow/icons/large/ability_criticalstrike.jpg" title="Amber Strike (1)">
+        <div id="cdStrike" class="cooldown"></div>
+        <div class="keybind">1</div>
+      </div>
+      <div class="button-container">
+        <img id="struggleControl" src="https://wow.zamimg.com/images/wow/icons/large/spell_nature_focusedmind.jpg" title="Struggle for Control (2)">
+        <div id="cdStruggle" class="cooldown"></div>
+        <div class="keybind">2</div>
+      </div>
+    </div>
+
+    <div class="bar-container">
+      <div class="bar-fill" id="enemyCastBar"></div>
+      <div class="bar-text" id="enemyCastText">Enemy Amber Explosion: 25s</div>
+    </div>
+
+    <div class="bar-container">
+      <div class="bar-fill" id="playerCastBar"></div>
+      <div class="bar-text" id="playerCastText">Player Amber Explosion: 25s</div>
+    </div>
+
+    <div class="status" id="status">Debuff Stacks: 0</div>
+    <div class="amplifier" id="amplifier">Damage Amplifier = 0%</div>
+  </div>
+
+  <script>
+    let strikeCooldown = 0, struggleCooldown = 0;
+    let enemyExplosionTime = Math.random() * 15 + 15; // 15–30s
+    let playerExplosionTime = Math.random() * 15 + 15;
+    let enemyCasting = false, playerCasting = false;
+    let debuffStacks = 0, debuffTimeLeft = 0;
+
+    const cdStrike = document.getElementById('cdStrike');
+    const cdStruggle = document.getElementById('cdStruggle');
+    const enemyCastBar = document.getElementById('enemyCastBar');
+    const playerCastBar = document.getElementById('playerCastBar');
+    const enemyCastText = document.getElementById('enemyCastText');
+    const playerCastText = document.getElementById('playerCastText');
+    const statusText = document.getElementById('status');
+    const amplifierText = document.getElementById('amplifier');
+
+    function useAmberStrike() {
+      if (strikeCooldown <= 0) {
+        if (enemyCasting) {
+          enemyCasting = false;
+          enemyExplosionTime = Math.random() * 15 + 15;
+        }
+        debuffStacks = debuffStacks === 0 ? 1 : debuffStacks + 1;
+        debuffTimeLeft = 15;
+        strikeCooldown = 6;
+      }
+    }
+
+    function useStruggleControl() {
+      if (struggleCooldown <= 0) {
+        if (playerCasting) {
+          playerCasting = false;
+          playerExplosionTime = Math.random() * 15 + 15;
+        }
+        struggleCooldown = 6;
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '1') useAmberStrike();
+      if (e.key === '2') useStruggleControl();
+    });
+
+    function updateCooldowns() {
+      cdStrike.textContent = strikeCooldown > 0 ? strikeCooldown.toFixed(1) : "";
+      cdStruggle.textContent = struggleCooldown > 0 ? struggleCooldown.toFixed(1) : "";
+    }
+
+    function updateBars() {
+      if (!enemyCasting && enemyExplosionTime <= 2.5) {
+        enemyCasting = true;
+      }
+      if (!playerCasting && playerExplosionTime <= 2.5) {
+        playerCasting = true;
+      }
+
+      if (enemyCasting) {
+        const castProgress = 1 - (enemyExplosionTime / 2.5);
+        enemyCastBar.style.width = `${castProgress * 100}%`;
+        enemyCastText.textContent = `Enemy Casting: ${(enemyExplosionTime).toFixed(1)}s`;
+        if (enemyExplosionTime <= 0) gameOver("Enemy Amber Explosion hit!");
+      } else {
+        enemyCastBar.style.width = '0%';
+        enemyCastText.textContent = `Enemy Amber Explosion in: ${enemyExplosionTime.toFixed(1)}s`;
+      }
+
+      if (playerCasting) {
+        const castProgress = 1 - (playerExplosionTime / 2.5);
+        playerCastBar.style.width = `${castProgress * 100}%`;
+        playerCastText.textContent = `Player Casting: ${(playerExplosionTime).toFixed(1)}s`;
+        if (playerExplosionTime <= 0) gameOver("Player Amber Explosion hit!");
+      } else {
+        playerCastBar.style.width = '0%';
+        playerCastText.textContent = `Player Amber Explosion in: ${playerExplosionTime.toFixed(1)}s`;
+      }
+
+      let debuffInfo = debuffStacks > 0 ? ` (${debuffTimeLeft.toFixed(1)}s remaining)` : '';
+      statusText.textContent = `Debuff Stacks: ${debuffStacks}${debuffInfo}`;
+      amplifierText.textContent = `Damage Amplifier = ${debuffStacks * 10}%`;
+    }
+
+    function gameOver(reason) {
+      alert("Game Over! " + reason);
+      location.reload();
+    }
+
+    function gameLoop() {
+      strikeCooldown = Math.max(0, strikeCooldown - 0.1);
+      struggleCooldown = Math.max(0, struggleCooldown - 0.1);
+      enemyExplosionTime -= 0.1;
+      playerExplosionTime -= 0.1;
+
+      if (debuffTimeLeft > 0) {
+        debuffTimeLeft -= 0.1;
+      } else if (debuffStacks > 0) {
+        debuffStacks = 0;
+      }
+
+      updateCooldowns();
+      updateBars();
+    }
+
+    setInterval(gameLoop, 100);
+  </script>
+</body>
+</html>
